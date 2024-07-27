@@ -11,6 +11,7 @@ import {
   orderBy,
   setDoc,
   Timestamp,
+  DocumentData,
 } from "firebase/firestore";
 import { userRef, db } from "../firebaseConfig";
 import { getRoomId } from "../utils/common";
@@ -18,19 +19,20 @@ import MessageItem from "../components/MessageItem";
 
 const Home = () => {
   const { user, logout } = useAuth();
-  const [userId, setUserId] = useState();
-  const [users, setUsers] = useState([]);
-  const [messages, setMessages] = useState([]);
+  const [userId, setUserId] = useState<string>();
+  const [users, setUsers] = useState<any[]>([]);
+  const [messages, setMessages] = useState<DocumentData[]>([]);
   const [text, setText] = useState("");
   const scrollViewRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const [selectedUserIndex, setSelectedUserIndex] = useState<number|null>(null);
 
   const handleLogut = async () => {
     await logout();
   }
 
   useEffect(() => {
-    if (user.uid) {
+    if (user!.uid) {
       getUsers();
     }
   }, []);
@@ -39,7 +41,7 @@ const Home = () => {
     const q = query(userRef, where("userId", "!=", user?.uid));
 
     const querySnapshot = await getDocs(q);
-    const data = [];
+    const data :any[]= [];
     querySnapshot.forEach((doc) => {
       data.push({ ...doc.data() });
     });
@@ -73,7 +75,10 @@ const Home = () => {
       createdAt: Timestamp.fromDate(new Date()),
     });
   };
-
+  const handleUserClick = (index : number, userId :string) => {
+    setSelectedUserIndex(index);
+    setUserId(userId);
+  };
   const handleSendMessage = async () => {
     const message = text.trim();
     if (!message) return;
@@ -83,7 +88,7 @@ const Home = () => {
       const messagesRef = collection(docRef, "messages");
       setText("");
       if (inputRef){
-        inputRef.current.value = "";
+        inputRef.current!.value = "";
       }
       await addDoc(messagesRef, {
         userId: user?.userId,
@@ -107,13 +112,13 @@ const Home = () => {
     <div className="flex flex-col min-h-screen overflow-hidden">
       {users.length > 0 ? (
         <div className="h-screen flex">
-          <div className="h-full w-1/3 bg-slate-400 relative">
+          <div className="h-full w-1/3 bg-blue-200 relative">
             <div className="flex flex-col gap-2 p-6 overflow-y-auto">
               {users.map((user, index) => (
                 <div
                   key={index}
-                  className={`p-4 flex items-center justify-between border-b ${index + 1 === users.length ? "border-transparent" : "border-gray-200"}`}
-                  onClick={() => setUserId(user.userId)}
+                  className={`p-4 flex items-center justify-between border-b ${selectedUserIndex === index ? "bg-gray-200" : ""}`}
+                  onClick={() => handleUserClick(index,user.userId)}
                 >
                   <div>
                     <p className="text-lg font-semibold">{user.username}</p>
@@ -134,7 +139,7 @@ const Home = () => {
           <div className="h-full w-2/3">
             {!userId ? (
               <div>
-                <p>no chat</p>
+              
               </div>
             ) : (
               <div className="py-10 px-10 relative h-full">
@@ -145,7 +150,7 @@ const Home = () => {
                   {messages.map((message: any, index: number) => (
                     <MessageItem
                       message={message}
-                      key={index}
+                      key={"l"+index}
                       currentUser={user}
                     />
                   ))}

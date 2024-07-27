@@ -18,8 +18,24 @@ export interface RegisterProps extends LoginProps {
   profileUrl: string;
 }
 
-export const AuthContext = createContext({});
+export interface User {
+  uid: string;
+  userId :string;
+  email: string;
+  username: string;
+  profileUrl: string;
+}
 
+export interface AuthContextType {
+  user: User | null;
+  isAuthenticated: boolean | undefined;
+  login: (props: LoginProps) => Promise<{ success: boolean; msg?: string }>;
+  logout: () => Promise<{ success: boolean; msg?: string; error?: any }>;
+  register: (props: RegisterProps) => Promise<{ success: boolean; msg?: string; data?: any }>;
+}
+
+
+export const AuthContext = createContext<AuthContextType | null>(null);
 export const AuthContextProvider = ({
   children,
 }: {
