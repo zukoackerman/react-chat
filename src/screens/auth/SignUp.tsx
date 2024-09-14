@@ -1,12 +1,12 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { RegisterProps, useAuth } from "../../context/AuthContext";
 import Loading from "../../components/Loading";
+import { useAuth } from "../../context/useAuth";
 import RegisterImage from "../../assets/images/register.png"
 
 const SignUp = () => {
   const navigate = useNavigate();
-  const { register } = useAuth() as { register: ({ email, password, username, profileUrl }: RegisterProps) => Promise<any> };
+  const { register } = useAuth() 
   const [loading, setLoading] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");

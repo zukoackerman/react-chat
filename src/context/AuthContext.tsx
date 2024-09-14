@@ -1,12 +1,14 @@
-import { createContext, useContext, useEffect, useState } from "react";
+import { createContext, useEffect, useState } from "react";
 import {
   onAuthStateChanged,
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
   signOut,
+  User as FirebaseUser,
 } from "firebase/auth";
 import { auth, db } from "../firebaseConfig.ts";
 import { doc, getDoc, setDoc } from "firebase/firestore";
+import { FirebaseError } from "firebase/app";
 
 export interface LoginProps {
   email: string;
@@ -19,36 +21,35 @@ export interface RegisterProps extends LoginProps {
 }
 
 export interface User {
-  uid: string;
-  userId :string;
+  id: string;
   email: string;
-  username: string;
-  profileUrl: string;
+  name: string;
+  profile_picture_url: string;
+  role: number;
 }
 
 export interface AuthContextType {
   user: User | null;
   isAuthenticated: boolean | undefined;
   login: (props: LoginProps) => Promise<{ success: boolean; msg?: string }>;
-  logout: () => Promise<{ success: boolean; msg?: string; error?: any }>;
-  register: (props: RegisterProps) => Promise<{ success: boolean; msg?: string; data?: any }>;
+  logout: () => Promise<{ success: boolean; msg?: string; error?: unknown }>;
+  register: (props: RegisterProps) => Promise<{ success: boolean; msg?: string; data?: FirebaseUser }>;
 }
 
-
 export const AuthContext = createContext<AuthContextType | null>(null);
+
 export const AuthContextProvider = ({
   children,
 }: {
   children: React.ReactNode;
 }) => {
-  const [user, setUser] = useState<any>(null);
-  const [isAuthenticated, setIsAuthenticated] = useState<any>(undefined);
+  const [user, setUser] = useState<User | null>(null);
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean | undefined>(undefined);
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, (user) => {
       if (user) {
         setIsAuthenticated(true);
-        setUser(user);
         updateUserData(user.uid);
       } else {
         setIsAuthenticated(false);
@@ -63,13 +64,8 @@ export const AuthContextProvider = ({
     const docSnap = await getDoc(docRef);
 
     if (docSnap.exists()) {
-      const data = docSnap.data();
-      setUser({
-        ...user,
-        username: data.username,
-        profileUrl: data.profileUrl,
-        userId: data.userId,
-      });
+      const data = docSnap.data() as User;
+      setUser(data);
     }
   };
 
@@ -77,11 +73,14 @@ export const AuthContextProvider = ({
     try {
       await signInWithEmailAndPassword(auth, email, password);
       return { success: true };
-    } catch (error: any) {
-      let msg = error.message;
-      if (msg.includes("(auth/invalid-email)")) msg = "Invalid Email";
-      if (msg.includes("(auth/invalid-credential)")) msg = "Wrong Credentials";
-      return { success: false, msg };
+    } catch (error) {
+      if (error instanceof FirebaseError) {
+        let msg = error.message;
+        if (msg.includes("(auth/invalid-email)")) msg = "Invalid Email";
+        if (msg.includes("(auth/invalid-credential)")) msg = "Wrong Credentials";
+        return { success: false, msg };
+      }
+      return { success: false, msg: "An unexpected error occurred" };
     }
   };
 
@@ -89,8 +88,11 @@ export const AuthContextProvider = ({
     try {
       await signOut(auth);
       return { success: true };
-    } catch (error: any) {
-      return { success: false, msg: error.message, error };
+    } catch (error) {
+      if (error instanceof FirebaseError) {
+        return { success: false, msg: error.message, error };
+      }
+      return { success: false, msg: "An unexpected error occurred", error };
     }
   };
 
@@ -107,17 +109,22 @@ export const AuthContextProvider = ({
         password
       );
       await setDoc(doc(db, "users", response.user.uid), {
-        username,
-        profileUrl,
-        userId: response.user.uid,
+        id: response.user.uid,
+        name: username,
+        profile_picture_url: profileUrl,
+        role: 1, 
+        email: email,
       });
       return { success: true, data: response.user };
-    } catch (error: any) {
-      let msg = error.message;
-      if (msg.includes("(auth/invalid-email)")) msg = "Invalid Email";
-      if (msg.includes("(auth/email-already-in-use)"))
-        msg = "This email is already in use";
-      return { success: false, msg };
+    } catch (error) {
+      if (error instanceof FirebaseError) {
+        let msg = error.message;
+        if (msg.includes("(auth/invalid-email)")) msg = "Invalid Email";
+        if (msg.includes("(auth/email-already-in-use)"))
+          msg = "This email is already in use";
+        return { success: false, msg };
+      }
+      return { success: false, msg: "An unexpected error occurred" };
     }
   };
 
@@ -128,12 +135,4 @@ export const AuthContextProvider = ({
       {children}
     </AuthContext.Provider>
   );
-};
-
-export const useAuth = () => {
-  const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error("useAuth must be used within an AuthContextProvider");
-  }
-  return context;
 };

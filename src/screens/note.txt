@@ -1,0 +1,30 @@
+const createChatRoom = async (jobId: string, companyId: string, jobfinderId: string) => {
+  const chatData = {
+    job_id: jobId,
+    company_id: companyId,
+    jobfinder_id: jobfinderId,
+    created_at: Timestamp.now(),
+    last_message: "",
+    last_message_timestamp: Timestamp.now(),
+    is_active: true,
+  };
+
+  try {
+    const chatRef = await addDoc(collection(db, "chats"), chatData);
+    console.log("Chat room created with ID: ", chatRef.id);
+    
+    // Optionally, create a notification for the company
+    await addDoc(collection(db, "notifications"), {
+      recipient_id: companyId,
+      type: "new_match",
+      content: `A new job seeker has matched with your job posting.`,
+      is_read: false,
+      created_at: Timestamp.now(),
+    });
+
+    return chatRef.id;
+  } catch (error) {
+    console.error("Error creating chat room:", error);
+    throw error;
+  }
+};

@@ -1,12 +1,12 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { LoginProps, useAuth } from "../../context/AuthContext";
+import { useAuth } from "../../context/useAuth";
 import Loading from "../../components/Loading"; 
 import LoginImage from "../../assets/images/login.png"
 
 const SignIn = () => {
   const navigate = useNavigate();
-  const { login } = useAuth() as { login: ({ email, password }: LoginProps) => Promise<any> };
+  const { login } = useAuth();
   const [loading, setLoading] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");

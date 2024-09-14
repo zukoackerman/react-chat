@@ -1,24 +1,20 @@
-import React, { Dispatch, SetStateAction } from 'react';
+import React from 'react';
+import { Chat } from '../screens/Home';
 import ChatItem from './ChatItem';
 
 interface ChatListProps {
-  currentUser: any;
-  users: Array<any>;
-  setUserId: Dispatch<SetStateAction<string>>;
+  chats: Chat[];
+  onSelectChat: (chat: Chat) => void;
 }
 
-const ChatList: React.FC<ChatListProps> = ({ currentUser, users, setUserId }) => {
+const ChatList: React.FC<ChatListProps> = ({ chats, onSelectChat }) => {
   return (
     <div className="flex-1">
       <div className="flex flex-col gap-2 p-6 overflow-y-auto">
-        {users.map((user, index) => (
-          <ChatItem
-            key={user.userId}
-            noBorder={index + 1 === users.length}
-            item={user}
-            setUserId={setUserId}
-            currentUser={currentUser}
-          />
+        {chats.map((chat, index) => (
+       <div key={index} onClick={() => onSelectChat(chat)}>
+        <ChatItem chat={chat} onSelect={onSelectChat}/>
+       </div>
         ))}
       </div>
     </div>

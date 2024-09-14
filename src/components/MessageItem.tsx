@@ -1,28 +1,21 @@
 import React from "react";
+import { Message } from "../screens/Home";
 
 interface MessageItemProps {
-  message: any;
-  currentUser: any;
+  message: Message;
+  currentUser: { id: number };
 }
 
 const MessageItem: React.FC<MessageItemProps> = ({ message, currentUser }) => {
-  if (currentUser?.userId === message?.userId) {
-    return (
-      <div className="flex justify-end mb-3 mr-3">
-        <div className="self-end p-3 rounded-2xl bg-white border border-neutral-200">
-          <p className="text-sm">{message.text}</p>
-        </div>
+  const isCurrentUser = currentUser.id === message.sender_id;
+
+  return (
+    <div className={`flex mb-3 ${isCurrentUser ? 'justify-end' : 'justify-start'}`}>
+      <div className={`p-3 rounded-2xl ${isCurrentUser ? 'bg-blue-500 text-white' : 'bg-gray-200'}`}>
+        <p className="text-sm">{message.content}</p>
       </div>
-    );
-  } else {
-    return (
-      <div className="flex justify-start mb-3 mr-3">
-        <div className="self-end p-3 rounded-2xl bg-neutral-200 border border-neutral-200">
-          <p className="text-sm">{message.text}</p>
-        </div>
-      </div>
-    );
-  }
+    </div>
+  );
 };
 
 export default MessageItem;
