@@ -79,7 +79,7 @@ const Home = () => {
     const chatsRef = collection(db, "chats");
     const q = query(
       chatsRef,
-      where("company_id", "==", parsedId), //company id
+      where("company_id", "==", 1), //company id
       orderBy("last_message_timestamp", "desc")
     );
 
